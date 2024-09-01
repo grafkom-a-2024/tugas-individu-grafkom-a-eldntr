@@ -61,19 +61,25 @@ const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
 const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-const x = canvas.width / 2 - 50; 
-const y = canvas.height / 2 - 50;
-const width = 100;
-const height = 100;
+function createCircleVertices(centerX, centerY, radius, numSegments) {
+    const positions = [];
+    const angleStep = (Math.PI * 2) / numSegments;
+    positions.push(centerX, centerY);
+    for (let i = 0; i <= numSegments; i++) {
+        const angle = i * angleStep;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        positions.push(x, y);
+    }
+    return positions;
+}
 
-const positions = [
-    x, y,
-    x + width, y,
-    x, y + height,
-    x, y + height,
-    x + width, y,
-    x + width, y + height
-];
+const x = canvas.width / 2; 
+const y = canvas.height / 2;
+const radius = 100;
+const numSegments = 50;
+
+const positions = createCircleVertices(x, y, radius, numSegments);
 
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -92,4 +98,7 @@ const stride = 0;
 const offset = 0;        
 gl.vertexAttribPointer(positionLocation, size, type, normalize, stride, offset);
 
-gl.drawArrays(gl.TRIANGLES, 0, 6);
+gl.clearColor(0, 0, 0, 1);
+gl.clear(gl.COLOR_BUFFER_BIT);
+
+gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
