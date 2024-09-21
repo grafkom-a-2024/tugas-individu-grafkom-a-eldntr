@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebGL 3D Bowling Pin</title>
+  <title>WebGL 3D Bowling Pin with Controls</title>
   <style>
     body {
       margin: 0;
@@ -13,12 +13,28 @@
       height: 100vh;
       display: block;
     }
+    #uiContainer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
 <canvas></canvas>
 <div id="uiContainer">
   <div id="ui"></div>
+  <label for="translateX">Translate X:</label>
+  <input type="range" id="translateX" min="-10" max="10" step="0.1" value="0"><br>
+  
+  <label for="translateY">Translate Y:</label>
+  <input type="range" id="translateY" min="-10" max="10" step="0.1" value="0"><br>
+  
+  <label for="scale">Scale:</label>
+  <input type="range" id="scale" min="0.1" max="10" step="0.1" value="1"><br>
 </div>
 
 <!-- vertex shader -->
@@ -159,6 +175,26 @@
       capEnd: true,
     };
 
+    let translation = [0, 0]; // Default translation values
+    let scale = 1; // Default scale value
+    let worldMatrix = m4.identity();
+
+    // HTML controls for translation and scale
+    document.getElementById('translateX').addEventListener('input', function(event) {
+      translation[0] = parseFloat(event.target.value);
+      render();
+    });
+
+    document.getElementById('translateY').addEventListener('input', function(event) {
+      translation[1] = parseFloat(event.target.value);
+      render();
+    });
+
+    document.getElementById('scale').addEventListener('input', function(event) {
+      scale = parseFloat(event.target.value);
+      render();
+    });
+
     function generateMesh(bufferInfo) {
       const tempPoints = getPointsOnBezierCurves(curvePoints, data.tolerance);
       const points = simplifyPoints(tempPoints, 0, tempPoints.length, data.distance);
@@ -228,10 +264,8 @@
 
     const programInfo = webglUtils.createProgramInfo(gl, ["vertex-shader-3d", "fragment-shader-3d"]);
     
-    // Load your texture image (update the image path)
     const texInfo = loadImageAndCreateTextureInfo("image.png", render);
 
-    let worldMatrix = m4.identity();
     let projectionMatrix;
     let extents = { min: [0, 0, 0], max: [0, 0, 0] };
     let bufferInfo;
@@ -274,9 +308,15 @@
       }
 
       webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+      
+      // Translasi dan scaling diterapkan di sini
+      const translationMatrix = m4.translation(translation[0], translation[1], 0);
+      const scalingMatrix = m4.scaling(scale, scale, scale);
+      const finalWorldMatrix = m4.multiply(translationMatrix, m4.multiply(scalingMatrix, worldMatrix));
+
       webglUtils.setUniforms(programInfo, {
-        u_matrix: m4.multiply(viewProjectionMatrix, worldMatrix),
-        u_texture: texInfo.texture,  // Apply the texture here
+        u_matrix: m4.multiply(viewProjectionMatrix, finalWorldMatrix),
+        u_texture: texInfo.texture,
       });
 
       webglUtils.drawBufferInfo(gl, bufferInfo, gl.TRIANGLES);
@@ -471,6 +511,7 @@
       { type: "checkbox", key: "triangles", change: render },
     ]);
 
+    // Add mouse and touch controls for camera rotation
     gl.canvas.addEventListener('mousedown', (e) => { e.preventDefault(); startRotateCamera(e); });
     window.addEventListener('mouseup', stopRotateCamera);
     window.addEventListener('mousemove', rotateCamera);
@@ -479,7 +520,7 @@
     window.addEventListener('touchmove', (e) => { rotateCamera(e.touches[0]); });
 
     let lastPos;
-    let moving;
+    let moving = false;
 
     function startRotateCamera(e) {
       lastPos = getRelativeMousePosition(gl.canvas, e);
