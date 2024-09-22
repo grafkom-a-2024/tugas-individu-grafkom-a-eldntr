@@ -1,6 +1,3 @@
-"use strict";
-
-// Define the lerp function
 function lerp(a, b, t) {
     return a + (b - a) * t;
 }
@@ -88,7 +85,6 @@ const v2 = (function () {
     };
 }());
 
-// Define the lathePoints function
 function lathePoints(points, startAngle, endAngle, numDivisions, capStart, capEnd) {
     const positions = [];
     const texcoords = [];
@@ -150,25 +146,23 @@ function main() {
     }
 
     const data = {
-        tolerance: 0.1,  // Reduced tolerance for finer detail
-        distance: 0.3,   // Adjust the distance for smoother surfaces
-        divisions: 60,   // Increase number of divisions for smoother mesh
+        tolerance: 0.1,  
+        distance: 0.3,  
+        divisions: 60,   
         startAngle: 0,
         endAngle: Math.PI * 2,
         capStart: true,
         capEnd: true,
     };
 
-    let translation = [0, 0]; // Default translation values
-    let scale = 1; // Default scale value
+    let translation = [0, 0]; 
+    let scale = 1;
     let worldMatrix = m4.identity();
 
-    // Lighting values
     let lightPosition = [10, 10, 5];
-    let lightColor = [1, 1, 1]; // Default white light
+    let lightColor = [1, 1, 1];
     let lightIntensity = 1.0;
 
-    // HTML controls for translation, scale, and light settings
     document.getElementById('translateX').addEventListener('input', function (event) {
         translation[0] = parseFloat(event.target.value);
         render();
@@ -224,13 +218,11 @@ function main() {
         const points = simplifyPoints(tempPoints, 0, tempPoints.length, data.distance);
         const arrays = lathePoints(points, data.startAngle, data.endAngle, data.divisions, data.capStart, data.capEnd);
 
-        // Ensure that positions and indices are generated correctly
         if (!arrays.position || !arrays.indices) {
             console.error("Positions or indices are not generated correctly.");
             return;
         }
 
-        // Calculate normals
         arrays.normal = calculateNormals(arrays.position, arrays.indices);
 
         if (!bufferInfo) {
@@ -240,7 +232,7 @@ function main() {
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arrays.position), gl.STATIC_DRAW);
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.attribs.a_texcoord.buffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arrays.texcoord), gl.STATIC_DRAW);
-            gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.attribs.a_normal.buffer); // Bind normals
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.attribs.a_normal.buffer); 
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arrays.normal), gl.STATIC_DRAW);
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferInfo.indices);
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(arrays.indices), gl.STATIC_DRAW);
@@ -260,6 +252,19 @@ function main() {
     let projectionMatrix;
     let extents = { min: [0, 0, 0], max: [0, 0, 0] };
     let bufferInfo;
+   
+    let cameraType = "perspective"; 
+    document.getElementById('perspectiveCamera').addEventListener('change', function (event) {
+        if (event.target.checked) {
+            cameraType = "perspective";
+            render();
+        }
+    }); document.getElementById('orthographicCamera').addEventListener('change', function (event) {
+        if (event.target.checked) {
+            cameraType = "orthographic";
+            render();
+        }
+    });
 
     function update() {
         const info = generateMesh(bufferInfo);
@@ -268,36 +273,16 @@ function main() {
         render();
     }
     update();
-
-    // Menyimpan status pilihan kamera
-    let cameraType = "perspective"; // Default camera type
-
-    // Menangkap event perubahan pada pilihan radio
-    document.getElementById('perspectiveCamera').addEventListener('change', function (event) {
-        if (event.target.checked) {
-            cameraType = "perspective";
-            render();
-        }
-    });
-
-    document.getElementById('orthographicCamera').addEventListener('change', function (event) {
-        if (event.target.checked) {
-            cameraType = "orthographic";
-            render();
-        }
-    });
-
     function render() {
         webglUtils.resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio);
 
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Set background to black
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);   
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.enable(gl.DEPTH_TEST);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 
-        // Buat matriks proyeksi berdasarkan pilihan kamera
         let projectionMatrix;
         if (cameraType === "perspective") {
             const fieldOfViewRadians = Math.PI * .25; // 45 derajat
@@ -328,14 +313,11 @@ function main() {
             console.error('Buffer info is not properly initialized.');
             return;
         }
-
         webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
         const translationMatrix = m4.translation(translation[0], translation[1], 0);
         const scalingMatrix = m4.scaling(scale, scale, scale);
         const finalWorldMatrix = m4.multiply(translationMatrix, m4.multiply(scalingMatrix, worldMatrix));
-
-        // Set light direction (opposite of light position)
         const lightDirection = m4.normalize(m4.subtractVectors([0, 0, 0], lightPosition));
 
         webglUtils.setUniforms(programInfo, {
@@ -555,7 +537,6 @@ function main() {
             }
         }
 
-        // Normalize all the normals
         for (let i = 0; i < normals.length; i += 3) {
             const n = [normals[i + 0], normals[i + 1], normals[i + 2]];
             const length = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
@@ -566,17 +547,6 @@ function main() {
 
         return normals;
     }
-
-
-    webglLessonsUI.setupUI(document.querySelector("#ui"), data, [
-        // { type: "slider", key: "distance", change: update, min: 0.001, max: 5, precision: 3, step: 0.001 },
-        // { type: "slider", key: "divisions", change: update, min: 1, max: 60 },
-        // { type: "slider", key: "startAngle", change: update, min: 0, max: Math.PI * 2, precision: 3, step: 0.001, uiMult: 180 / Math.PI, uiPrecision: 0 },
-        // { type: "slider", key: "endAngle", change: update, min: 0, max: Math.PI * 2, precision: 3, step: 0.001, uiMult: 180 / Math.PI, uiPrecision: 0 },
-        // { type: "checkbox", key: "capStart", change: update },
-        // { type: "checkbox", key: "capEnd", change: update },
-        // { type: "checkbox", key: "triangles", change: render },
-    ]);
 
     // Add mouse and touch controls for camera rotation
     gl.canvas.addEventListener('mousedown', (e) => { e.preventDefault(); startRotateCamera(e); });
