@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kubus WebGL</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .controls {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .controls label {
+      display: block;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="glcanvas"></canvas>
+
+  <div class="controls">
+    <label>
+      Kecepatan Rotasi: <input type="range" id="rotationSpeed" min="0" max="100" value="50">
+    </label>
+    <label>
+      Translasi X: <input type="range" id="translateX" min="-100" max="100" value="0">
+    </label>
+    <label>
+      Translasi Y: <input type="range" id="translateY" min="-100" max="100" value="0">
+    </label>
+    <label>
+      Rotasi Atas-Bawah (X): <input type="range" id="rotateX" min="-180" max="180" value="0">
+    </label>
+    <label>
+      Rotasi Kiri-Kanan (Y): <input type="range" id="rotateY" min="-180" max="180" value="0">
+    </label>
+    <label>
+      Skala: <input type="range" id="scale" min="0" max="100" value="50">
+    </label>
+
+    <label>
+      Pilih Bentuk:
+      <select id="shapeSelect">
+        <option value="cube">Kubus</option>
+        <option value="cone">Kerucut</option>
+        <option value="cylinder">Silinder</option>
+      </select>
+    </label>
+
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+  <script src="geometry.js"></script>
+</body>
+
+</html>
