@@ -55,6 +55,26 @@
 
     <label for="lightColor">Light Color:</label>
     <input type="color" id="lightColor" value="#ffffff"><br>
+
+    <h3>Camera Controls</h3>
+    <label for="cameraX">Camera X:</label>
+    <input type="range" id="cameraX" min="-100" max="100" step="0.1" value="0"><br>
+
+    <label for="cameraY">Camera Y:</label>
+    <input type="range" id="cameraY" min="-100" max="100" step="0.1" value="0"><br>
+
+    <label for="cameraZ">Camera Z:</label>
+    <input type="range" id="cameraZ" min="0" max="200" step="0.1" value="100"><br>
+
+    <label for="cameraAngleX">Camera Angle X:</label>
+    <input type="range" id="cameraAngleX" min="-180" max="180" step="1" value="0"><br>
+
+    <label for="cameraAngleY">Camera Angle Y:</label>
+    <input type="range" id="cameraAngleY" min="-180" max="180" step="1" value="0"><br>
+
+    <label for="cameraAngleZ">Camera Angle Z:</label>
+    <input type="range" id="cameraAngleZ" min="-180" max="180" step="1" value="0"><br>
+
   </div>
 
   <!-- vertex shader -->
@@ -306,6 +326,10 @@
       let lightColor = [1, 1, 1]; // Default white light
       let lightIntensity = 1.0;
 
+      let cameraPosition = [0, 0, 100]; // Default camera position
+      let cameraRotation = [0, 0, 0]; // Default camera angles (X, Y, Z)
+
+
       // HTML controls for translation, scale, and light settings
       document.getElementById('translateX').addEventListener('input', function (event) {
         translation[0] = parseFloat(event.target.value);
@@ -348,6 +372,37 @@
         lightColor = hexToRgb(hexColor);
         render();
       });
+
+      document.getElementById('cameraX').addEventListener('input', function (event) {
+        cameraPosition[0] = parseFloat(event.target.value);
+        render();
+      });
+
+      document.getElementById('cameraY').addEventListener('input', function (event) {
+        cameraPosition[1] = parseFloat(event.target.value);
+        render();
+      });
+
+      document.getElementById('cameraZ').addEventListener('input', function (event) {
+        cameraPosition[2] = parseFloat(event.target.value);
+        render();
+      });
+
+      document.getElementById('cameraAngleX').addEventListener('input', function (event) {
+        cameraRotation[0] = parseFloat(event.target.value);
+        render();
+      });
+
+      document.getElementById('cameraAngleY').addEventListener('input', function (event) {
+        cameraRotation[1] = parseFloat(event.target.value);
+        render();
+      });
+
+      document.getElementById('cameraAngleZ').addEventListener('input', function (event) {
+        cameraRotation[2] = parseFloat(event.target.value);
+        render();
+      });
+
 
       function hexToRgb(hex) {
         var bigint = parseInt(hex.slice(1), 16);
@@ -408,60 +463,60 @@
       update();
 
       function render() {
-        webglUtils.resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio);
+    webglUtils.resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio);
 
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Set background to black
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.enable(gl.DEPTH_TEST);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Set background to black
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        const fieldOfViewRadians = Math.PI * .25;
-        const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-        projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
+    const fieldOfViewRadians = Math.PI * .25;
+    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
-        const midY = lerp(extents.min[1], extents.max[1], .5);
-        const sizeToFitOnScreen = (extents.max[1] - extents.min[1]) * .6;
-        const distance = sizeToFitOnScreen / Math.tan(fieldOfViewRadians * .5);
-        const cameraPosition = [0, midY, distance];
-        const target = [0, midY, 0];
-        const up = [0, -1, 0];
-        const cameraMatrix = m4.lookAt(cameraPosition, target, up);
-        const viewMatrix = m4.inverse(cameraMatrix);
-        const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+    // Perbarui posisi kamera dan rotasi berdasarkan slider
+    let cameraMatrix = m4.identity();
+    cameraMatrix = m4.translate(cameraMatrix, cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+    cameraMatrix = m4.xRotate(cameraMatrix, cameraRotation[0] * Math.PI / 180);
+    cameraMatrix = m4.yRotate(cameraMatrix, cameraRotation[1] * Math.PI / 180);
+    cameraMatrix = m4.zRotate(cameraMatrix, cameraRotation[2] * Math.PI / 180);
 
-        gl.useProgram(programInfo.program);
+    const viewMatrix = m4.inverse(cameraMatrix);
+    const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
 
-        if (!bufferInfo || !bufferInfo.attribs) {
-          console.error('Buffer info is not properly initialized.');
-          return;
-        }
+    gl.useProgram(programInfo.program);
 
+    if (!bufferInfo || !bufferInfo.attribs) {
+        console.error('Buffer info is not properly initialized.');
+        return;
+    }
 
-        webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+    webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
-        const translationMatrix = m4.translation(translation[0], translation[1], 0);
-        const scalingMatrix = m4.scaling(scale, scale, scale);
-        const finalWorldMatrix = m4.multiply(translationMatrix, m4.multiply(scalingMatrix, worldMatrix));
+    const translationMatrix = m4.translation(translation[0], translation[1], 0);
+    const scalingMatrix = m4.scaling(scale, scale, scale);
+    const finalWorldMatrix = m4.multiply(translationMatrix, m4.multiply(scalingMatrix, worldMatrix));
 
-        // Set light direction (opposite of light position) for bidirectional lighting
-        const lightDirection = m4.normalize(m4.subtractVectors([0, 0, 0], lightPosition));
+    // Set light direction (opposite of light position) for bidirectional lighting
+    const lightDirection = m4.normalize(m4.subtractVectors([0, 0, 0], lightPosition));
 
-        // Set uniforms for lighting and rendering
-        webglUtils.setUniforms(programInfo, {
-          u_matrix: m4.multiply(viewProjectionMatrix, finalWorldMatrix),
-          u_world: finalWorldMatrix,
-          u_texture: texInfo.texture,
-          u_lightWorldPosition: lightPosition,
-          u_lightColor: lightColor,
-          u_ambientLight: [0.2, 0.2, 0.2], // Ambient lighting more dominant
-          u_specularColor: [1, 1, 1],
-          u_shininess: 50,
-          u_viewWorldPosition: cameraPosition,
-          u_lightIntensity: lightIntensity,
-        });
+    // Set uniforms for lighting and rendering
+    webglUtils.setUniforms(programInfo, {
+        u_matrix: m4.multiply(viewProjectionMatrix, finalWorldMatrix),
+        u_world: finalWorldMatrix,
+        u_texture: texInfo.texture,
+        u_lightWorldPosition: lightPosition,
+        u_lightColor: lightColor,
+        u_ambientLight: [0.2, 0.2, 0.2], // Ambient lighting more dominant
+        u_specularColor: [1, 1, 1],
+        u_shininess: 50,
+        u_viewWorldPosition: cameraPosition,
+        u_lightIntensity: lightIntensity,
+    });
 
-        webglUtils.drawBufferInfo(gl, bufferInfo, gl.TRIANGLES);
-      }
+    webglUtils.drawBufferInfo(gl, bufferInfo, gl.TRIANGLES);
+}
+
 
       function parseSVGPath(svg) {
         const points = [];
