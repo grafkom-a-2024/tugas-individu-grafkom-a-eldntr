@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WebGL Segitiga</title>
+    </head>
+
+    <body>
+        <canvas id="webgl-canvas" width="500" height="500"></canvas>
+        <script type="text/javascript">
+
+        // Inisialisasi WebGL
+        var canvas = document.getElementById('webgl-canvas');
+        var gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            console.error('WebGL tidak didukung di browser ini.');
+            // Tidak boleh menggunakan return di luar fungsi
+            // Kode hanya akan berhenti di sini tanpa return statement
+            // Jika WebGL tidak ada, eksekusi kode berikutnya tidak diperlukan
+            throw new Error('WebGL tidak didukung di browser ini.');
+        }
+
+        // Shader Sumber Kode
+        var vertexShaderSource = `
+            attribute vec3 position;
+            attribute vec3 color;
+            varying vec3 vColor;
+            void main(void) {
+                gl_Position = vec4(position, 1.0);
+                vColor = color;
+            }
+        `;
+
+        var fragmentShaderSource = `
+            precision mediump float;
+            varying vec3 vColor;
+            void main(void) {
+                gl_FragColor = vec4(vColor, 1.0);
+            }
+        `;
+
+        // Fungsi untuk membuat shader
+        function createShader(gl, type, source) {
+            var shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Error compiling shader:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        // Membuat vertex dan fragment shader
+        var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+        if (!vertexShader || !fragmentShader) {
+            console.error('Gagal membuat shader.');
+            throw new Error('Shader gagal dibuat.');
+        }
+
+        // Membuat program shader
+        var program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('Error linking program:', gl.getProgramInfoLog(program));
+            throw new Error('Program shader gagal di-link.');
+        }
+
+        // Menggunakan program shader
+        gl.useProgram(program);
+
+        // Definisikan titik-titik segitiga
+        var points = new Float32Array([
+            -0.5, -0.5, 0.0,  1.0, 0.0, 0.0,  // Titik pertama, merah
+             0.5, -0.5, 0.0,  0.0, 1.0, 0.0,  // Titik kedua, hijau
+             0.0,  0.5, 0.0,  0.0, 0.0, 1.0   // Titik ketiga, biru
+        ]);
+        // 1 titik = 3 posisi + 3 warna = 6 elemen * 4 byte/element = 24 byte
+        // 1 elemen = 4 byte; 1 float = 4 byte 
+
+        // Membuat buffer dan mengirim data titik ke GPU
+        var buffer = gl.createBuffer();
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
+
+    // Hubungkan data titik dan warna dengan variabel atribut di shader
+        var positionLocation = gl.getAttribLocation(program, 'position');
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 24, 0); // Membaca array dari awal buffer
+        gl.enableVertexAttribArray(positionLocation);
+
+        var colorLocation = gl.getAttribLocation(program, 'color');
+        gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 24, 12); // Membaca array dari byte ke-12
+        gl.enableVertexAttribArray(colorLocation);
+        
+        // Set warna background
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Hitam
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // Gambar segitiga
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    </script>
+    </body>
+
+</html>
